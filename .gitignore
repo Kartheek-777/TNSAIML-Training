@@ -1,0 +1,7 @@
+@"
+.venv/
+__pycache__/
+*.py[cod]
+.env
+"@ | Out-File -Encoding utf8 .gitignore
+dataset/creditcard.csv
