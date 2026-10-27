@@ -6,21 +6,11 @@ import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 
-
-# ==========================================
-# PROJECT FILE PATHS
-# ==========================================
-
 BASE_DIR = Path(__file__).resolve().parent
 
 MODEL_PATH = BASE_DIR / "model.joblib"
 DATA_PATH = BASE_DIR / "dataset" / "creditcard.csv"
 RESULTS_PATH = BASE_DIR / "model_results.csv"
-
-
-# ==========================================
-# PAGE CONFIGURATION
-# ==========================================
 
 st.set_page_config(
     page_title="FraudGuard | Credit Card Fraud Detection",
@@ -29,28 +19,20 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
-# ==========================================
-# LIGHT THEME CSS
-# ==========================================
-
 st.markdown(
     """
     <style>
-    /* Main application */
     .stApp {
         background-color: #F5F7FB;
         color: #172B4D;
     }
 
-    /* Main content spacing */
     .block-container {
         padding-top: 2rem;
         padding-bottom: 3rem;
         max-width: 1450px;
     }
 
-    /* Sidebar */
     [data-testid="stSidebar"] {
         background-color: #FFFFFF;
         border-right: 1px solid #E5EAF2;
@@ -62,18 +44,15 @@ st.markdown(
         color: #173B73;
     }
 
-    /* Headings */
     h1, h2, h3 {
         color: #173B73 !important;
         font-weight: 700 !important;
     }
 
-    /* Body text */
     p, label, .stMarkdown {
         color: #344563;
     }
 
-    /* Metric cards */
     [data-testid="stMetric"] {
         background-color: #FFFFFF;
         border: 1px solid #E5EAF2;
@@ -91,7 +70,6 @@ st.markdown(
         font-weight: 700;
     }
 
-    /* Buttons */
     .stButton > button,
     .stFormSubmitButton > button {
         background-color: #2563EB;
@@ -110,30 +88,25 @@ st.markdown(
         border: none;
     }
 
-    /* Input fields */
     div[data-baseweb="input"],
     div[data-baseweb="select"] {
         border-radius: 8px;
     }
 
-    /* Dataframes */
     [data-testid="stDataFrame"] {
         border: 1px solid #E5EAF2;
         border-radius: 10px;
         overflow: hidden;
     }
 
-    /* Section separators */
     hr {
         border-color: #E1E7F0;
     }
 
-    /* Info boxes */
     [data-testid="stAlert"] {
         border-radius: 10px;
     }
 
-    /* Custom page header */
     .page-subtitle {
         color: #62748E;
         font-size: 15px;
@@ -160,16 +133,11 @@ st.markdown(
         color: #62748E;
         font-size: 12px;
     }
-
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-
-# ==========================================
-# LOAD PROJECT FILES
-# ==========================================
 
 @st.cache_resource
 def load_model():
@@ -186,8 +154,6 @@ def load_results():
     return pd.read_csv(RESULTS_PATH)
 
 
-# Check whether required files exist
-
 missing_files = []
 
 if not MODEL_PATH.exists():
@@ -199,7 +165,6 @@ if not DATA_PATH.exists():
 if not RESULTS_PATH.exists():
     missing_files.append("model_results.csv")
 
-
 if missing_files:
     st.error(
         "Required project files are missing: "
@@ -207,7 +172,6 @@ if missing_files:
     )
     st.info("Check your project folder and run python train.py if necessary.")
     st.stop()
-
 
 try:
     artifact = load_model()
@@ -218,20 +182,12 @@ except Exception as error:
     st.error(f"Unable to load project files: {error}")
     st.stop()
 
-
 model = artifact["model"]
 feature_names = artifact["feature_names"]
 best_model_name = artifact["model_name"]
 
-
-# ==========================================
-# DATASET STATISTICS
-# ==========================================
-
 total_transactions = len(df)
-
 fraud_transactions = int((df["Class"] == 1).sum())
-
 legitimate_transactions = int((df["Class"] == 0).sum())
 
 fraud_percentage = (
@@ -240,13 +196,7 @@ fraud_percentage = (
     else 0
 )
 
-
-# ==========================================
-# SIDEBAR NAVIGATION
-# ==========================================
-
 with st.sidebar:
-
     st.markdown(
         """
         <div class="brand-name">💳 FraudGuard</div>
@@ -258,25 +208,35 @@ with st.sidebar:
     )
 
     st.divider()
-
     st.markdown("### Navigation")
+
+    page_options = [
+        "Dashboard",
+        "Fraud Detection",
+        "Model Performance",
+        "Dataset Explorer",
+        "About Project",
+    ]
+
+    if "navigation_page" in st.session_state:
+        default_page = st.session_state.pop("navigation_page")
+        default_index = (
+            page_options.index(default_page)
+            if default_page in page_options
+            else 0
+        )
+    else:
+        default_index = 0
 
     page = st.radio(
         "Choose a page",
-        [
-            "Dashboard",
-            "Fraud Detection",
-            "Model Performance",
-            "Dataset Explorer",
-            "About Project",
-        ],
+        page_options,
+        index=default_index,
         label_visibility="collapsed",
     )
 
     st.divider()
-
     st.markdown("### Model Information")
-
     st.write("**Selected Model**")
     st.info(best_model_name)
 
@@ -286,17 +246,11 @@ with st.sidebar:
     st.write("3. Random Forest")
 
     st.divider()
-
     st.caption("Machine Learning Project")
     st.caption("Built with Python and Streamlit")
 
 
-# ==========================================
-# DASHBOARD PAGE
-# ==========================================
-
 if page == "Dashboard":
-
     st.title("Dashboard")
 
     st.markdown(
@@ -306,54 +260,28 @@ if page == "Dashboard":
         unsafe_allow_html=True,
     )
 
-    # Metric cards
-
     col1, col2, col3, col4 = st.columns(4)
 
-    col1.metric(
-        "Total Transactions",
-        f"{total_transactions:,}",
-    )
-
-    col2.metric(
-        "Legitimate Transactions",
-        f"{legitimate_transactions:,}",
-    )
-
-    col3.metric(
-        "Fraudulent Transactions",
-        f"{fraud_transactions:,}",
-    )
-
-    col4.metric(
-        "Fraud Rate",
-        f"{fraud_percentage:.3f}%",
-    )
+    col1.metric("Total Transactions", f"{total_transactions:,}")
+    col2.metric("Legitimate Transactions", f"{legitimate_transactions:,}")
+    col3.metric("Fraudulent Transactions", f"{fraud_transactions:,}")
+    col4.metric("Fraud Rate", f"{fraud_percentage:.3f}%")
 
     st.write("")
-
     st.success(
         f"Your selected machine learning model is {best_model_name}."
     )
-
     st.divider()
-
-    # Charts
 
     left_col, right_col = st.columns(2)
 
     with left_col:
-
         st.subheader("Transaction Distribution")
 
         fig, ax = plt.subplots(figsize=(7, 4))
 
         labels = ["Legitimate", "Fraudulent"]
-
-        values = [
-            legitimate_transactions,
-            fraud_transactions,
-        ]
+        values = [legitimate_transactions, fraud_transactions]
 
         ax.bar(
             labels,
@@ -364,21 +292,17 @@ if page == "Dashboard":
 
         ax.set_ylabel("Number of Transactions")
         ax.set_title("Legitimate vs Fraudulent Transactions")
-
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
 
         fig.tight_layout()
-
         st.pyplot(fig)
         plt.close(fig)
 
     with right_col:
-
         st.subheader("Model F1 Score Comparison")
 
         if {"Model", "F1 Score"}.issubset(results_df.columns):
-
             chart_df = results_df.sort_values(
                 "F1 Score",
                 ascending=True,
@@ -399,20 +323,16 @@ if page == "Dashboard":
 
             ax.set_xlabel("F1 Score")
             ax.set_xlim(0, 1)
-
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
 
             fig.tight_layout()
-
             st.pyplot(fig)
             plt.close(fig)
-
         else:
             st.info("F1 Score information is unavailable.")
 
     st.divider()
-
     st.subheader("Quick Actions")
 
     action1, action2 = st.columns(2)
@@ -440,12 +360,7 @@ if page == "Dashboard":
             st.rerun()
 
 
-# ==========================================
-# FRAUD DETECTION PAGE
-# ==========================================
-
 elif page == "Fraud Detection":
-
     st.title("Fraud Detection")
 
     st.markdown(
@@ -468,15 +383,11 @@ elif page == "Fraud Detection":
     )
 
     with st.form("transaction_prediction_form"):
-
         input_values = {}
-
         input_columns = st.columns(3)
 
         for index, feature in enumerate(feature_names):
-
             with input_columns[index % 3]:
-
                 input_values[feature] = st.number_input(
                     label=feature,
                     value=0.0,
@@ -490,7 +401,6 @@ elif page == "Fraud Detection":
         )
 
     if submitted:
-
         input_df = pd.DataFrame(
             [input_values],
             columns=feature_names,
@@ -499,50 +409,32 @@ elif page == "Fraud Detection":
         values_array = input_df.to_numpy(dtype=float)
 
         if not np.isfinite(values_array).all():
-
-            st.error(
-                "Please enter valid numerical values."
-            )
-
+            st.error("Please enter valid numerical values.")
         else:
-
             try:
-
                 prediction = int(model.predict(input_df)[0])
 
                 st.divider()
                 st.subheader("Prediction Result")
 
                 if prediction == 1:
-
-                    st.error(
-                        "⚠️ Potential Fraud Detected"
-                    )
-
+                    st.error("⚠️ Potential Fraud Detected")
                     st.write(
                         "The model classified this transaction "
                         "as potentially fraudulent."
                     )
-
                 else:
-
-                    st.success(
-                        "✅ Transaction Classified as Legitimate"
-                    )
-
+                    st.success("✅ Transaction Classified as Legitimate")
                     st.write(
                         "The model classified this transaction "
                         "as legitimate."
                     )
 
                 if hasattr(model, "predict_proba"):
-
                     probabilities = model.predict_proba(input_df)[0]
-
                     class_labels = list(model.classes_)
 
                     if 1 in class_labels:
-
                         fraud_probability = float(
                             probabilities[class_labels.index(1)]
                         )
@@ -550,14 +442,12 @@ elif page == "Fraud Detection":
                         result_col1, result_col2 = st.columns(2)
 
                         with result_col1:
-
                             st.metric(
                                 "Estimated Fraud Probability",
                                 f"{fraud_probability * 100:.2f}%",
                             )
 
                         with result_col2:
-
                             st.metric(
                                 "Model Prediction",
                                 "Potential Fraud"
@@ -576,18 +466,10 @@ elif page == "Fraud Detection":
                 )
 
             except Exception as error:
+                st.error(f"Unable to generate prediction: {error}")
 
-                st.error(
-                    f"Unable to generate prediction: {error}"
-                )
-
-
-# ==========================================
-# MODEL PERFORMANCE PAGE
-# ==========================================
 
 elif page == "Model Performance":
-
     st.title("Model Performance")
 
     st.markdown(
@@ -622,7 +504,6 @@ elif page == "Model Performance":
     ]
 
     for column in numeric_columns:
-
         formatted_df[column] = formatted_df[column].map(
             lambda value: f"{value:.4f}"
         )
@@ -634,7 +515,6 @@ elif page == "Model Performance":
     )
 
     st.divider()
-
     st.subheader("Performance Metrics")
 
     selected_metric = st.selectbox(
@@ -643,7 +523,6 @@ elif page == "Model Performance":
     )
 
     if selected_metric in results_df.columns:
-
         sorted_results = results_df.sort_values(
             selected_metric,
             ascending=True,
@@ -665,42 +544,35 @@ elif page == "Model Performance":
         ax.set_xlabel(selected_metric)
         ax.set_title(f"Model Comparison: {selected_metric}")
         ax.set_xlim(0, 1)
-
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
 
         fig.tight_layout()
-
         st.pyplot(fig)
         plt.close(fig)
 
     st.divider()
-
     st.subheader("Understanding the Metrics")
 
     with st.expander("Accuracy"):
-
         st.write(
             "Accuracy measures the proportion of all predictions "
             "that were correct."
         )
 
     with st.expander("Precision"):
-
         st.write(
             "Precision measures how many transactions predicted as "
             "fraudulent were actually fraudulent."
         )
 
     with st.expander("Recall"):
-
         st.write(
             "Recall measures how many actual fraudulent transactions "
             "the model successfully identified."
         )
 
     with st.expander("F1 Score"):
-
         st.write(
             "F1 Score balances precision and recall. It is useful when "
             "working with imbalanced datasets."
@@ -712,12 +584,7 @@ elif page == "Model Performance":
     )
 
 
-# ==========================================
-# DATASET EXPLORER PAGE
-# ==========================================
-
 elif page == "Dataset Explorer":
-
     st.title("Dataset Explorer")
 
     st.markdown(
@@ -729,23 +596,11 @@ elif page == "Dataset Explorer":
 
     col1, col2, col3 = st.columns(3)
 
-    col1.metric(
-        "Total Records",
-        f"{len(df):,}",
-    )
-
-    col2.metric(
-        "Total Features",
-        f"{len(feature_names):,}",
-    )
-
-    col3.metric(
-        "Missing Values",
-        f"{int(df.isnull().sum().sum()):,}",
-    )
+    col1.metric("Total Records", f"{len(df):,}")
+    col2.metric("Total Features", f"{len(feature_names):,}")
+    col3.metric("Missing Values", f"{int(df.isnull().sum().sum()):,}")
 
     st.divider()
-
     st.subheader("Transaction Records")
 
     row_limit = st.selectbox(
@@ -753,14 +608,11 @@ elif page == "Dataset Explorer":
         [5, 10, 25, 50, 100],
     )
 
-    show_fraud_only = st.checkbox(
-        "Show only fraudulent transactions"
-    )
+    show_fraud_only = st.checkbox("Show only fraudulent transactions")
 
     display_df = df
 
     if show_fraud_only:
-
         display_df = df[df["Class"] == 1]
 
     st.dataframe(
@@ -775,11 +627,9 @@ elif page == "Dataset Explorer":
     )
 
     st.divider()
-
     st.subheader("Dataset Information")
 
     with st.expander("View column data types"):
-
         dtype_df = pd.DataFrame(
             {
                 "Column": df.columns,
@@ -794,17 +644,8 @@ elif page == "Dataset Explorer":
         )
 
     with st.expander("View missing values"):
-
-        missing_df = (
-            df.isnull()
-            .sum()
-            .reset_index()
-        )
-
-        missing_df.columns = [
-            "Column",
-            "Missing Values",
-        ]
+        missing_df = df.isnull().sum().reset_index()
+        missing_df.columns = ["Column", "Missing Values"]
 
         st.dataframe(
             missing_df,
@@ -813,12 +654,7 @@ elif page == "Dataset Explorer":
         )
 
 
-# ==========================================
-# ABOUT PROJECT PAGE
-# ==========================================
-
 elif page == "About Project":
-
     st.title("About This Project")
 
     st.markdown(
@@ -843,37 +679,29 @@ elif page == "About Project":
     )
 
     st.divider()
-
     st.subheader("Technology Stack")
 
     tech1, tech2, tech3 = st.columns(3)
 
     with tech1:
-
         st.markdown("### Python")
-
         st.write(
             "Used for data processing, model training, and predictions."
         )
 
     with tech2:
-
         st.markdown("### Scikit-learn")
-
         st.write(
             "Used to train and evaluate the classification algorithms."
         )
 
     with tech3:
-
         st.markdown("### Streamlit")
-
         st.write(
             "Used to build the interactive frontend using Python."
         )
 
     st.divider()
-
     st.subheader("Machine Learning Algorithms")
 
     st.write("**1. Logistic Regression**")
@@ -895,14 +723,12 @@ elif page == "About Project":
     )
 
     st.divider()
-
     st.subheader("Target Variable")
 
     st.write("**Class = 0:** Legitimate transaction")
     st.write("**Class = 1:** Fraudulent transaction")
 
     st.divider()
-
     st.subheader("Project Workflow")
 
     st.markdown(
@@ -921,11 +747,6 @@ elif page == "About Project":
         "This project is for educational and demonstration purposes. "
         "Predictions should not be treated as definitive financial decisions."
     )
-
-
-# ==========================================
-# FOOTER
-# ==========================================
 
 st.divider()
 
